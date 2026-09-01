@@ -1,0 +1,8 @@
+# These are local-dev-only. server.js in particular starts a persistent
+# http.createServer().listen() process, which is NOT a valid Vercel
+# Serverless Function shape — if Vercel's zero-config detection ever picks it
+# up as an entry point, invoking it crashes with FUNCTION_INVOCATION_FAILED.
+# This site is 100% static; nothing here should ever run as a function.
+server.js
+test/
+README.md
