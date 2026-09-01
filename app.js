@@ -81,6 +81,7 @@ function renderMatch(maleInput, femaleInput, male, female, match) {
     <div class="breakdown">
       <div class="breakdown-head"><h4>The 8 factors</h4><p>Each row shows this app's exact result for that factor.</p></div>
       <div class="koota-list">${categories}</div>
+      <p class="result-footnote">The score above comes straight from a published Vedic astrology reference table. These 8 factors are computed separately using standard rules, so they may not always add up to exactly the same total — regional reference tables vary.</p>
     </div>`;
   $("#matchResults").hidden = false;
   $("#matchResults").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });

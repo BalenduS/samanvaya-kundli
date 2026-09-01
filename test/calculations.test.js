@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { birthProfile, calculateKootas, julianDay, moonProfileFromLongitude, recommendNakshatras } from "../calculations.js";
+import { birthProfile, calculateKootas, julianDay, matrixScore, moonProfileFromLongitude, recommendNakshatras } from "../calculations.js";
 
 test("Julian day conversion respects UTC offsets", () => {
   assert.equal(julianDay("2000-01-01", "17:30", 330), 2451545);
@@ -23,7 +23,23 @@ test("identical Moon profiles produce a valid 36-point-scale result", () => {
   assert.equal(result.categories.length, 8);
   assert.equal(result.categories.reduce((sum, category) => sum + category.max, 0), 36);
   assert.ok(result.score >= 0 && result.score <= 36);
-  assert.equal(result.score, 25); // Janma Tara and same Nadi score zero; no cancellation rules are applied.
+  // Score comes from the reference marriage-points table, not a sum of the categories below.
+  assert.equal(result.score, matrixScore(profile, profile));
+  assert.equal(result.score, 28); // Same-star pairing per the reference table (source chart, Ashwini x Ashwini).
+});
+
+test("matrix score is bounded, asymmetric, and picks up split-nakshatra padas", () => {
+  const ashwini = moonProfileFromLongitude(1.6);
+  const bharani = moonProfileFromLongitude(15);
+  assert.equal(matrixScore(ashwini, bharani), 34);
+  assert.equal(matrixScore(bharani, ashwini), 33); // not symmetric — matches the source chart.
+
+  const span = 360 / 27, padaSpan = span / 4, krittikaIndex = 2;
+  const krittikaPada1 = moonProfileFromLongitude(krittikaIndex * span + 0.5 * padaSpan);
+  const krittikaPada3 = moonProfileFromLongitude(krittikaIndex * span + 2.5 * padaSpan);
+  const rohini = moonProfileFromLongitude(3 * span + 0.5 * padaSpan);
+  assert.equal(matrixScore(rohini, krittikaPada1), 9); // Krittika pada 1 falls in Mesha.
+  assert.equal(matrixScore(rohini, krittikaPada3), 19); // Krittika pada 3 falls in Vrishabha — different column.
 });
 
 test("birth calculation is deterministic and bounded", () => {

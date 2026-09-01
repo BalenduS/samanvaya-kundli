@@ -93,11 +93,11 @@ If that repository name is already taken under your account, choose another name
 
 ## Calculation and source boundaries
 
-The in-app **Method & provenance** section is the canonical explanation. In brief:
+The in-app **How this works** section is the canonical explanation. In brief:
 
-- the 36-point implementation follows the conventional modern North Indian Ashtakoota sequence;
-- the linked *Brihat Parāśara Horā Śāstra* edition is provided as wider Parāśara-tradition context, not as a claim that its oldest recoverable layer contains this exact modern table;
-- the browser calculation uses a compact lunar model and linear Lahiri/Chitrapaksha approximation, not a professional ephemeris;
-- regional relationship tables and exception rules vary, and this first version intentionally does not apply Nadi/Bhakoot cancellations or full-chart analysis.
+- the score out of 36 is a direct lookup in a 36×36 marriage-points table transcribed from a published South Indian Panchangam boy-girl matching chart (Chilakamarthi Panchangam), keyed by each partner's Moon Nakshatra and pada — see `MARRIAGE_POINTS_MATRIX` in `calculations.js`;
+- the 8-factor breakdown shown alongside the score (Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot, Nadi — labeled in plain English in the UI) is computed separately with standard Ashtakoota rules; it illustrates the traditional components but may not always sum to exactly the same total as the reference-table score, since regional tables vary;
+- the browser calculation uses a compact lunar model and linear Lahiri/Chitrapaksha approximation (not a professional ephemeris) to estimate each Moon's Nakshatra and pada from birth date, time, and timezone;
+- this first version does not apply Nadi/Bhakoot cancellation rules or full-chart analysis.
 
 Birth details are processed locally in the browser and are not transmitted by the app.
