@@ -4,9 +4,10 @@ Samanvaya is a mobile-first, dependency-free progressive web app for thoughtfull
 
 It includes:
 
-- a complete eight-category Ashtakoota (Guna Milan) table with a score out of 36;
+- a complete eight-category Ashtakoota (Guna Milan) table with a score out of 36, looked up from a published South Indian marriage-points reference table;
 - a category-by-category explanation of Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot, and Nadi;
-- sidereal Moon, rashi, nakshatra, and pada estimates from birth date, local time, and UTC offset;
+- five additional traditional checks alongside the score: Mangal Dosha (Manglik, Moon-chart based), Nadi and Bhakoot Dosha with commonly cited cancellation exceptions, Rajju Dosha, and Vedha Dosha;
+- sidereal Moon and Mars, rashi, nakshatra, and pada estimates from birth date, local time, and UTC offset;
 - a Nakshatra guide that compares all 27 nakshatras and recommends the strongest table alignments;
 - offline support, install icons, and a standalone PWA experience;
 - visible source notes, computational limitations, and a non-deterministic disclaimer.
@@ -97,7 +98,8 @@ The in-app **How this works** section is the canonical explanation. In brief:
 
 - the score out of 36 is a direct lookup in a 36×36 marriage-points table transcribed from a published South Indian Panchangam boy-girl matching chart (Chilakamarthi Panchangam), keyed by each partner's Moon Nakshatra and pada — see `MARRIAGE_POINTS_MATRIX` in `calculations.js`;
 - the 8-factor breakdown shown alongside the score (Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot, Nadi — labeled in plain English in the UI) is computed separately with standard Ashtakoota rules; it illustrates the traditional components but may not always sum to exactly the same total as the reference-table score, since regional tables vary;
-- the browser calculation uses a compact lunar model and linear Lahiri/Chitrapaksha approximation (not a professional ephemeris) to estimate each Moon's Nakshatra and pada from birth date, time, and timezone;
-- this first version does not apply Nadi/Bhakoot cancellation rules or full-chart analysis.
+- five additional traditional checks run alongside the score (see `additionalChecks` in `calculations.js`): **Mangal Dosha** (Manglik status from the Moon chart only — the fuller Ascendant-based version needs a geocoded birthplace, which this app doesn't collect), **Nadi** and **Bhakoot Dosha** with commonly cited cancellation exceptions, **Rajju Dosha** (same Pada/Kati/Nabhi/Kantha/Shira group), and **Vedha Dosha** (a fixed list of traditionally afflicting Nakshatra pairs) — these are commonly cited rule sets, not the only versions in circulation;
+- the browser calculation uses compact lunar and Martian orbital models with a linear Lahiri/Chitrapaksha approximation (not a professional ephemeris) to estimate each Moon/Mars position from birth date, time, and timezone;
+- this first version does not apply a full-chart (Navamsha/Lagna) analysis, which would need a geocoded birthplace rather than just a UTC offset.
 
 Birth details are processed locally in the browser and are not transmitted by the app.

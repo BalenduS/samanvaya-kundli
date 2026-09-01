@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { birthProfile, calculateKootas, julianDay, matrixScore, moonProfileFromLongitude, recommendNakshatras } from "../calculations.js";
+import { additionalChecks, birthProfile, calculateKootas, julianDay, matrixScore, moonProfileFromLongitude, recommendNakshatras } from "../calculations.js";
 
 test("Julian day conversion respects UTC offsets", () => {
   assert.equal(julianDay("2000-01-01", "17:30", 330), 2451545);
@@ -47,6 +47,29 @@ test("birth calculation is deterministic and bounded", () => {
   assert.ok(result.longitude >= 0 && result.longitude < 360);
   assert.ok(result.nakshatraIndex >= 0 && result.nakshatraIndex < 27);
   assert.ok(result.pada >= 1 && result.pada <= 4);
+});
+
+test("birth profile includes a bounded Mars-based Mangal Dosha read", () => {
+  const result = birthProfile({ date: "1992-08-14", time: "07:45", utcOffsetMinutes: 330 });
+  assert.ok(result.marsRashiIndex >= 0 && result.marsRashiIndex < 12);
+  assert.ok(result.manglikHouse >= 1 && result.manglikHouse <= 12);
+  assert.equal(typeof result.manglik, "boolean");
+  assert.equal(result.manglik, [1, 2, 4, 7, 8, 12].includes(result.manglikHouse));
+});
+
+test("additional checks are internally consistent and self-pairs never flag Mangal or Vedha", () => {
+  const male = birthProfile({ date: "1992-08-14", time: "07:45", utcOffsetMinutes: 330 });
+  const female = birthProfile({ date: "1994-11-02", time: "18:20", utcOffsetMinutes: 330 });
+  const checks = additionalChecks(male, female);
+  assert.equal(checks.mangal.compatible, male.manglik === female.manglik);
+  assert.equal(checks.nadi.present, male.nakshatra.nadi === female.nakshatra.nadi);
+  if (checks.nadi.cancelled) assert.equal(checks.nadi.present, true);
+  if (checks.bhakoot.cancelled) assert.equal(checks.bhakoot.present, true);
+
+  const selfChecks = additionalChecks(male, male);
+  assert.equal(selfChecks.mangal.compatible, true); // identical charts can't disagree on Manglik status.
+  assert.equal(selfChecks.vedha.present, false); // a star is never listed as its own Vedha pair.
+  assert.equal(selfChecks.rajju.present, true); // same birth star is always the same Rajju group.
 });
 
 test("recommendations rank eight unique nakshatras on the 36-point scale", () => {

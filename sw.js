@@ -1,4 +1,4 @@
-const CACHE = "samanvaya-v4";
+const CACHE = "samanvaya-v5";
 const CORE = ["/", "/styles.css", "/app.js", "/calculations.js", "/manifest.webmanifest", "/icons/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

@@ -129,6 +129,53 @@ const norm = (value) => ((value % 360) + 360) % 360;
 const sin = (degrees) => Math.sin(degrees * DEG);
 const cos = (degrees) => Math.cos(degrees * DEG);
 
+function keplerSolve(meanAnomalyDeg, eccentricity) {
+  let e = meanAnomalyDeg;
+  for (let i = 0; i < 4; i++) {
+    e = e - (e - (180 / Math.PI) * eccentricity * sin(e) - meanAnomalyDeg) / (1 - eccentricity * cos(e));
+  }
+  return e;
+}
+
+function sunPosition(jd) {
+  const d = jd - 2451543.5;
+  const perigee = norm(282.9404 + 0.0000470935 * d);
+  const meanAnomaly = norm(356.047 + 0.9856002585 * d);
+  const eccentricity = 0.016709 - 1.151e-9 * d;
+  const eccentricAnomaly = keplerSolve(meanAnomaly, eccentricity);
+  const xv = cos(eccentricAnomaly) - eccentricity;
+  const yv = Math.sqrt(1 - eccentricity ** 2) * sin(eccentricAnomaly);
+  const trueAnomaly = Math.atan2(yv, xv) / DEG;
+  const distance = Math.hypot(xv, yv);
+  return { longitude: norm(trueAnomaly + perigee), distance };
+}
+
+// Low-precision geocentric Mars longitude, the same compact orbital-elements method
+// (and the same accuracy tier) used for the Moon above — good enough to place Mars
+// in a zodiac sign for Mangal Dosha, not for anything finer.
+function marsLongitude(jd) {
+  const d = jd - 2451543.5;
+  const node = norm(49.5574 + 2.11081e-5 * d);
+  const inclination = 1.8497 - 1.78e-8 * d;
+  const perigee = norm(286.5016 + 2.92961e-5 * d);
+  const semiMajorAxis = 1.523688;
+  const eccentricity = 0.093405 + 2.516e-9 * d;
+  const meanAnomaly = norm(18.6021 + 0.5240207766 * d);
+  const eccentricAnomaly = keplerSolve(meanAnomaly, eccentricity);
+  const xv = semiMajorAxis * (cos(eccentricAnomaly) - eccentricity);
+  const yv = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2) * sin(eccentricAnomaly);
+  const trueAnomaly = Math.atan2(yv, xv) / DEG;
+  const radius = Math.hypot(xv, yv);
+  const argument = norm(trueAnomaly + perigee);
+  const xh = radius * (cos(node) * cos(argument) - sin(node) * sin(argument) * cos(inclination));
+  const yh = radius * (sin(node) * cos(argument) + cos(node) * sin(argument) * cos(inclination));
+
+  const sun = sunPosition(jd);
+  const xg = xh + sun.distance * cos(sun.longitude);
+  const yg = yh + sun.distance * sin(sun.longitude);
+  return norm(Math.atan2(yg, xg) / DEG);
+}
+
 export function julianDay(date, time, utcOffsetMinutes) {
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
@@ -196,14 +243,25 @@ export function moonProfileFromLongitude(longitude) {
   };
 }
 
+const MANGAL_HOUSES = [1, 2, 4, 7, 8, 12];
+
 export function birthProfile({ date, time, utcOffsetMinutes }) {
   const jd = julianDay(date, time, Number(utcOffsetMinutes));
   const tropicalLongitude = tropicalMoonLongitude(jd);
+  const ayanamsha = lahiriAyanamsha(jd);
+  const moon = moonProfileFromLongitude(tropicalLongitude - ayanamsha);
+  const marsSidereal = norm(marsLongitude(jd) - ayanamsha);
+  const marsRashiIndex = Math.floor(marsSidereal / 30);
+  const manglikHouse = ((marsRashiIndex - moon.rashiIndex + 12) % 12) + 1;
   return {
     jd,
     tropicalLongitude,
-    ayanamsha: lahiriAyanamsha(jd),
-    ...moonProfileFromLongitude(tropicalLongitude - lahiriAyanamsha(jd)),
+    ayanamsha,
+    ...moon,
+    marsRashiIndex,
+    marsRashi: RASHIS[marsRashiIndex],
+    manglikHouse,
+    manglik: MANGAL_HOUSES.includes(manglikHouse),
   };
 }
 
@@ -336,6 +394,89 @@ export function scoreBand(score) {
   if (score >= 18) return { label: "A mixed match", tone: "mixed", note: "Some factors align and others don't — a fairly even mix." };
   return { label: "A challenging match", tone: "low", note: "Several traditional factors differ between you two." };
 }
+
+// --- Additional traditional checks (outside the 36-point Ashtakoota score) -----------
+//
+// Mangal Dosha (Manglik status) is checked here from the Moon chart only — the fullest
+// traditional version also checks from the Ascendant, which needs a birthplace with
+// coordinates, not just a UTC offset, so it's outside this app's current scope.
+//
+// Rajju groups nakshatras into a repeating Pada/Kati/Nabhi/Kantha/Shira cycle used by
+// many traditional guides. Vedha lists a fixed set of mutually afflicting nakshatra
+// pairs. Nadi/Bhakoot cancellation (Parihara) rules vary by author; the ones used below
+// are commonly cited, not the only versions in circulation.
+const RAJJU_BY_NAKSHATRA = [
+  "Pada", "Kati", "Nabhi", "Kantha", "Shira", "Kantha", "Nabhi", "Kati", "Pada",
+  "Pada", "Kati", "Nabhi", "Kantha", "Shira", "Kantha", "Nabhi", "Kati", "Pada",
+  "Pada", "Kati", "Nabhi", "Kantha", "Shira", "Kantha", "Nabhi", "Kati", "Pada",
+];
+
+const VEDHA_PAIRS = [
+  ["Ashwini", "Jyeshtha"], ["Bharani", "Anuradha"], ["Krittika", "Vishakha"],
+  ["Rohini", "Swati"], ["Mrigashira", "Chitra"], ["Ardra", "Shravana"],
+  ["Punarvasu", "Uttara Ashadha"], ["Pushya", "Purva Ashadha"], ["Ashlesha", "Mula"],
+  ["Magha", "Revati"], ["Purva Phalguni", "Uttara Bhadrapada"], ["Uttara Phalguni", "Purva Bhadrapada"],
+  ["Hasta", "Shatabhisha"],
+];
+
+function mangalStatus(male, female) {
+  const compatible = male.manglik === female.manglik;
+  return {
+    male: male.manglik, female: female.manglik, compatible,
+    note: compatible
+      ? (male.manglik ? "Both charts show Mangal Dosha — traditionally considered a balanced pairing." : "Neither chart shows Mangal Dosha.")
+      : "Only one chart shows Mangal Dosha — commonly flagged for a closer look; several traditional exceptions can still apply.",
+  };
+}
+
+function nadiStatus(male, female) {
+  const sameNadi = male.nakshatra.nadi === female.nakshatra.nadi;
+  if (!sameNadi) return { present: false, cancelled: false, note: "Different Nadi groups — no dosha." };
+  const sameRashi = male.rashiIndex === female.rashiIndex;
+  if (!sameRashi) return { present: true, cancelled: true, note: "Same Nadi, but different Moon signs — commonly treated as cancelled." };
+  return { present: true, cancelled: false, note: "Same Nadi and same Moon sign — dosha applies." };
+}
+
+function bhakootStatus(male, female) {
+  const rashiDistanceA = ((female.rashiIndex - male.rashiIndex + 12) % 12) + 1;
+  const rashiDistanceB = ((male.rashiIndex - female.rashiIndex + 12) % 12) + 1;
+  const fault = [2, 5, 6, 8, 9, 12].includes(rashiDistanceA) || [2, 5, 6, 8, 9, 12].includes(rashiDistanceB);
+  if (!fault) return { present: false, cancelled: false, note: "No adverse Moon-sign distance — no dosha." };
+  const maleLord = lordsByRashi[male.rashiIndex];
+  const femaleLord = lordsByRashi[female.rashiIndex];
+  const lordRelations = [relation(maleLord, femaleLord), relation(femaleLord, maleLord)];
+  const cancelled = maleLord === femaleLord || lordRelations.every((value) => value === "friend" || value === "same");
+  return {
+    present: true, cancelled,
+    note: cancelled ? "Adverse Moon-sign distance, but the sign lords are friendly — commonly treated as cancelled." : "Adverse Moon-sign distance — dosha applies.",
+  };
+}
+
+function rajjuStatus(male, female) {
+  const maleGroup = RAJJU_BY_NAKSHATRA[male.nakshatraIndex];
+  const femaleGroup = RAJJU_BY_NAKSHATRA[female.nakshatraIndex];
+  const present = maleGroup === femaleGroup;
+  return {
+    present, group: maleGroup,
+    note: present ? `Both birth stars fall in the ${maleGroup} Rajju group — traditionally flagged.` : "Different Rajju groups — no dosha.",
+  };
+}
+
+function vedhaStatus(male, female) {
+  const present = pairIn(VEDHA_PAIRS, male.nakshatra.name, female.nakshatra.name);
+  return { present, note: present ? "These two birth stars are a traditionally listed afflicting pair." : "No traditional affliction listed between these birth stars." };
+}
+
+export function additionalChecks(male, female) {
+  return {
+    mangal: mangalStatus(male, female),
+    nadi: nadiStatus(male, female),
+    bhakoot: bhakootStatus(male, female),
+    rajju: rajjuStatus(male, female),
+    vedha: vedhaStatus(male, female),
+  };
+}
+// ---------------------------------------------------------------------------------------
 
 export function recommendNakshatras(male, limit = 8) {
   const boyCol = matrixColumnForPada(male.nakshatraIndex, male.pada);

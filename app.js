@@ -1,4 +1,4 @@
-import { birthProfile, calculateKootas, recommendNakshatras, RASHI_WESTERN, GANA_PLAIN } from "./calculations.js";
+import { birthProfile, calculateKootas, recommendNakshatras, additionalChecks, RASHI_WESTERN, GANA_PLAIN } from "./calculations.js";
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
@@ -51,6 +51,32 @@ function moonChip(label, name, profile) {
   return `<div class="moon-chip"><small>${escapeHtml(label)}</small><b>${escapeHtml(name)} · ${profile.nakshatra.name}</b><span>${profile.rashi} (${RASHI_WESTERN[profile.rashi]}) · segment ${profile.pada} of 4</span></div>`;
 }
 
+function checkCard(title, pillClass, pillLabel, note) {
+  return `<div class="check-card"><b>${title}</b><span class="check-pill ${pillClass}">${pillLabel}</span><p>${note}</p></div>`;
+}
+
+function renderChecks(checks) {
+  const mangalPill = checks.mangal.compatible ? ["clear", "Aligned"] : ["flag", "Flagged"];
+  const mangalWho = `${checks.mangal.male ? "Male: Manglik" : "Male: not Manglik"} · ${checks.mangal.female ? "Female: Manglik" : "Female: not Manglik"}`;
+  const nadiPill = !checks.nadi.present ? ["clear", "No dosha"] : checks.nadi.cancelled ? ["cancelled", "Cancelled"] : ["flag", "Dosha"];
+  const bhakootPill = !checks.bhakoot.present ? ["clear", "No dosha"] : checks.bhakoot.cancelled ? ["cancelled", "Cancelled"] : ["flag", "Dosha"];
+  const rajjuPill = checks.rajju.present ? ["flag", "Flagged"] : ["clear", "No dosha"];
+  const vedhaPill = checks.vedha.present ? ["flag", "Flagged"] : ["clear", "No dosha"];
+
+  return `
+    <div class="checks">
+      <div class="checks-head"><h4>Additional traditional checks</h4><p>Checked separately from the 36-point score above.</p></div>
+      <div class="checks-grid">
+        ${checkCard("Mangal Dosha", ...mangalPill, `${mangalWho}. ${checks.mangal.note}`)}
+        ${checkCard("Nadi Dosha", ...nadiPill, checks.nadi.note)}
+        ${checkCard("Bhakoot Dosha", ...bhakootPill, checks.bhakoot.note)}
+        ${checkCard("Rajju Dosha", ...rajjuPill, checks.rajju.note)}
+        ${checkCard("Vedha Dosha", ...vedhaPill, checks.vedha.note)}
+      </div>
+      <p class="result-footnote">Mangal Dosha here is read from the Moon chart only, not the fuller Ascendant-based version, which needs an exact birthplace. Nadi/Bhakoot cancellation and Vedha pairings follow commonly cited rules — other traditions apply different or additional exceptions.</p>
+    </div>`;
+}
+
 function renderMatch(maleInput, femaleInput, male, female, match) {
   const maleName = maleInput.name || "Male profile";
   const femaleName = femaleInput.name || "Female profile";
@@ -82,7 +108,8 @@ function renderMatch(maleInput, femaleInput, male, female, match) {
       <div class="breakdown-head"><h4>The 8 factors</h4><p>Each row shows this app's exact result for that factor.</p></div>
       <div class="koota-list">${categories}</div>
       <p class="result-footnote">The score above comes straight from a published Vedic astrology reference table. These 8 factors are computed separately using standard rules, so they may not always add up to exactly the same total — regional reference tables vary.</p>
-    </div>`;
+    </div>
+    ${renderChecks(additionalChecks(male, female))}`;
   $("#matchResults").hidden = false;
   $("#matchResults").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
