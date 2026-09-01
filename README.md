@@ -35,7 +35,7 @@ npm test
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Semantic application shell, forms, method notes, and disclaimers |
+| `index.html` | Semantic application shell, forms, and method notes |
 | `styles.css` | Responsive visual system and accessibility states |
 | `app.js` | UI behavior, results rendering, and install guidance |
 | `calculations.js` | Moon/Mars/Ascendant position estimates and the Ashtakoota + traditional-checks scoring engine |
