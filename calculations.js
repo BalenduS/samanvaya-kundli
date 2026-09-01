@@ -128,6 +128,7 @@ export function matrixScore(maleProfile, femaleProfile) {
 const norm = (value) => ((value % 360) + 360) % 360;
 const sin = (degrees) => Math.sin(degrees * DEG);
 const cos = (degrees) => Math.cos(degrees * DEG);
+const tan = (degrees) => Math.tan(degrees * DEG);
 
 function keplerSolve(meanAnomalyDeg, eccentricity) {
   let e = meanAnomalyDeg;
@@ -174,6 +175,37 @@ function marsLongitude(jd) {
   const xg = xh + sun.distance * cos(sun.longitude);
   const yg = yh + sun.distance * sin(sun.longitude);
   return norm(Math.atan2(yg, xg) / DEG);
+}
+
+// Greenwich Mean Sidereal Time, in degrees (standard IAU 1982 formula).
+function greenwichSiderealTime(jd) {
+  const t = (jd - 2451545) / 36525;
+  return norm(280.46061837 + 360.98564736629 * (jd - 2451545) + 0.000387933 * t ** 2 - (t ** 3) / 38710000);
+}
+
+// Mean obliquity of the ecliptic, in degrees.
+function obliquityOfEcliptic(jd) {
+  const t = (jd - 2451545) / 36525;
+  return 23.439291 - 0.0130042 * t;
+}
+
+// Tropical ecliptic longitude of the Ascendant (Lagna), from Greenwich sidereal
+// time, the birthplace's east longitude, its latitude, and the obliquity of the
+// ecliptic — the standard closed-form Ascendant formula, verified in this app's
+// test suite against an independent numerical horizon search.
+function ascendantLongitude(jd, latitude, longitudeEast) {
+  const ramc = norm(greenwichSiderealTime(jd) + longitudeEast);
+  const eps = obliquityOfEcliptic(jd);
+  const y = -cos(ramc);
+  const x = sin(eps) * tan(latitude) + cos(eps) * sin(ramc);
+  return norm(Math.atan2(y, x) / DEG);
+}
+
+// Navamsha (D9): each 30° sign divides into nine 3°20' slices; treating the whole
+// 360° zodiac as one continuous run of these slices (Aries-first) reproduces the
+// classical movable/fixed/dual starting-sign rule exactly, and is far simpler.
+function navamshaIndex(longitude) {
+  return Math.floor(norm(longitude) / (10 / 3)) % 12;
 }
 
 export function julianDay(date, time, utcOffsetMinutes) {
@@ -245,7 +277,7 @@ export function moonProfileFromLongitude(longitude) {
 
 const MANGAL_HOUSES = [1, 2, 4, 7, 8, 12];
 
-export function birthProfile({ date, time, utcOffsetMinutes }) {
+export function birthProfile({ date, time, utcOffsetMinutes, latitude, longitude }) {
   const jd = julianDay(date, time, Number(utcOffsetMinutes));
   const tropicalLongitude = tropicalMoonLongitude(jd);
   const ayanamsha = lahiriAyanamsha(jd);
@@ -253,6 +285,15 @@ export function birthProfile({ date, time, utcOffsetMinutes }) {
   const marsSidereal = norm(marsLongitude(jd) - ayanamsha);
   const marsRashiIndex = Math.floor(marsSidereal / 30);
   const manglikHouse = ((marsRashiIndex - moon.rashiIndex + 12) % 12) + 1;
+
+  // Navamsha (D9) only needs the Moon's own sidereal longitude, so it's always
+  // available, with no birthplace required.
+  const navamshaRashiIndex = navamshaIndex(moon.longitude);
+
+  const hasBirthplace = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const lagna = hasBirthplace ? moonProfileFromLongitude(ascendantLongitude(jd, latitude, longitude) - ayanamsha) : null;
+  const lagnaManglikHouse = lagna ? ((marsRashiIndex - lagna.rashiIndex + 12) % 12) + 1 : null;
+
   return {
     jd,
     tropicalLongitude,
@@ -262,6 +303,13 @@ export function birthProfile({ date, time, utcOffsetMinutes }) {
     marsRashi: RASHIS[marsRashiIndex],
     manglikHouse,
     manglik: MANGAL_HOUSES.includes(manglikHouse),
+    navamshaRashiIndex,
+    navamshaRashi: RASHIS[navamshaRashiIndex],
+    vargottama: navamshaRashiIndex === moon.rashiIndex,
+    hasBirthplace,
+    lagna,
+    lagnaManglikHouse,
+    lagnaManglik: lagna ? MANGAL_HOUSES.includes(lagnaManglikHouse) : null,
   };
 }
 
@@ -429,6 +477,35 @@ function mangalStatus(male, female) {
   };
 }
 
+function lagnaMangalStatus(male, female) {
+  if (!male.hasBirthplace || !female.hasBirthplace) return null;
+  const compatible = male.lagnaManglik === female.lagnaManglik;
+  return {
+    male: male.lagnaManglik, female: female.lagnaManglik, compatible,
+    note: compatible
+      ? (male.lagnaManglik ? "Both charts show Mangal Dosha from the Ascendant — traditionally considered a balanced pairing." : "Neither chart shows Mangal Dosha from the Ascendant.")
+      : "Only one chart shows Mangal Dosha from the Ascendant — this is the fuller, more authoritative version of the check.",
+  };
+}
+
+function navamshaStatus(male, female) {
+  const maleLord = lordsByRashi[male.navamshaRashiIndex];
+  const femaleLord = lordsByRashi[female.navamshaRashiIndex];
+  const lordRelations = [relation(maleLord, femaleLord), relation(femaleLord, maleLord)];
+  const harmonious = maleLord === femaleLord || lordRelations.every((value) => value === "friend" || value === "same");
+  const strained = lordRelations.includes("enemy");
+  return {
+    maleRashi: male.navamshaRashi, femaleRashi: female.navamshaRashi,
+    maleVargottama: male.vargottama, femaleVargottama: female.vargottama,
+    harmonious, strained,
+    note: harmonious
+      ? "Your Navamsha (D9) Moon signs share a friendly relationship — a supportive secondary read."
+      : strained
+        ? "Your Navamsha (D9) Moon signs are traditionally unfriendly — worth weighing alongside the main score, not on its own."
+        : "Your Navamsha (D9) Moon signs are traditionally neutral toward each other.",
+  };
+}
+
 function nadiStatus(male, female) {
   const sameNadi = male.nakshatra.nadi === female.nakshatra.nadi;
   if (!sameNadi) return { present: false, cancelled: false, note: "Different Nadi groups — no dosha." };
@@ -470,10 +547,12 @@ function vedhaStatus(male, female) {
 export function additionalChecks(male, female) {
   return {
     mangal: mangalStatus(male, female),
+    lagnaMangal: lagnaMangalStatus(male, female),
     nadi: nadiStatus(male, female),
     bhakoot: bhakootStatus(male, female),
     rajju: rajjuStatus(male, female),
     vedha: vedhaStatus(male, female),
+    navamsha: navamshaStatus(male, female),
   };
 }
 // ---------------------------------------------------------------------------------------

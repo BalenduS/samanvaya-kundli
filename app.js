@@ -1,4 +1,5 @@
 import { birthProfile, calculateKootas, recommendNakshatras, additionalChecks, RASHI_WESTERN, GANA_PLAIN } from "./calculations.js";
+import { searchCities, cityLabel } from "./places.js";
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
@@ -31,12 +32,47 @@ function setMode(tab) {
 }
 
 function readBirth(prefix) {
+  const latitude = parseFloat($(`#${prefix}Lat`)?.value);
+  const longitude = parseFloat($(`#${prefix}Lng`)?.value);
   return {
     name: $(`#${prefix}Name`)?.value.trim() || "",
     date: $(`#${prefix}Date`).value,
     time: $(`#${prefix}Time`).value,
     utcOffsetMinutes: Number($(`#${prefix}Timezone`).value),
+    latitude: Number.isFinite(latitude) ? latitude : undefined,
+    longitude: Number.isFinite(longitude) ? longitude : undefined,
   };
+}
+
+// Birthplace search: as the user types, look up matching cities and offer them
+// through a native <datalist> (works with keyboard/screen readers, no custom
+// widget needed). Picking a suggestion — or typing coordinates in directly —
+// fills the lat/long fields that unlock the Ascendant and Navamsha checks.
+function wireBirthplaceField(prefix) {
+  const input = $(`#${prefix}Place`);
+  const options = $(`#${prefix}PlaceOptions`);
+  const latField = $(`#${prefix}Lat`);
+  const lngField = $(`#${prefix}Lng`);
+  if (!input || !options) return;
+  let lookup = new Map();
+  let debounceTimer;
+
+  input.addEventListener("input", () => {
+    const match = lookup.get(input.value);
+    if (match) {
+      latField.value = match[0];
+      lngField.value = match[1];
+      return;
+    }
+    latField.value = "";
+    lngField.value = "";
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      const results = await searchCities(input.value);
+      lookup = new Map(results.map((city) => [cityLabel(city), [city[2], city[3]]]));
+      options.innerHTML = results.map((city) => `<option value="${escapeHtml(cityLabel(city))}"></option>`).join("");
+    }, 150);
+  });
 }
 
 function validBirth(input) {
@@ -51,6 +87,11 @@ function moonChip(label, name, profile) {
   return `<div class="moon-chip"><small>${escapeHtml(label)}</small><b>${escapeHtml(name)} · ${profile.nakshatra.name}</b><span>${profile.rashi} (${RASHI_WESTERN[profile.rashi]}) · segment ${profile.pada} of 4</span></div>`;
 }
 
+function lagnaChip(label, name, profile) {
+  if (!profile.hasBirthplace) return "";
+  return `<div class="moon-chip"><small>${escapeHtml(label)}</small><b>${escapeHtml(name)} · ${profile.lagna.nakshatra.name}</b><span>${profile.lagna.rashi} (${RASHI_WESTERN[profile.lagna.rashi]}) Ascendant</span></div>`;
+}
+
 function checkCard(title, pillClass, pillLabel, note) {
   return `<div class="check-card"><b>${title}</b><span class="check-pill ${pillClass}">${pillLabel}</span><p>${note}</p></div>`;
 }
@@ -62,18 +103,32 @@ function renderChecks(checks) {
   const bhakootPill = !checks.bhakoot.present ? ["clear", "No dosha"] : checks.bhakoot.cancelled ? ["cancelled", "Cancelled"] : ["flag", "Dosha"];
   const rajjuPill = checks.rajju.present ? ["flag", "Flagged"] : ["clear", "No dosha"];
   const vedhaPill = checks.vedha.present ? ["flag", "Flagged"] : ["clear", "No dosha"];
+  const navamshaPill = checks.navamsha.harmonious ? ["clear", "Harmonious"] : checks.navamsha.strained ? ["flag", "Strained"] : ["neutral", "Neutral"];
+  const vargottamaNote = [
+    checks.navamsha.maleVargottama ? "male is Vargottama" : "",
+    checks.navamsha.femaleVargottama ? "female is Vargottama" : "",
+  ].filter(Boolean).join(", ");
+
+  let lagnaCard = "";
+  if (checks.lagnaMangal) {
+    const lagnaPill = checks.lagnaMangal.compatible ? ["clear", "Aligned"] : ["flag", "Flagged"];
+    const lagnaWho = `${checks.lagnaMangal.male ? "Male: Manglik" : "Male: not Manglik"} · ${checks.lagnaMangal.female ? "Female: Manglik" : "Female: not Manglik"}`;
+    lagnaCard = checkCard("Mangal Dosha (Ascendant)", ...lagnaPill, `${lagnaWho}. ${checks.lagnaMangal.note}`);
+  }
 
   return `
     <div class="checks">
       <div class="checks-head"><h4>Additional traditional checks</h4><p>Checked separately from the 36-point score above.</p></div>
       <div class="checks-grid">
-        ${checkCard("Mangal Dosha", ...mangalPill, `${mangalWho}. ${checks.mangal.note}`)}
+        ${checkCard("Mangal Dosha (Moon)", ...mangalPill, `${mangalWho}. ${checks.mangal.note}`)}
+        ${lagnaCard}
         ${checkCard("Nadi Dosha", ...nadiPill, checks.nadi.note)}
         ${checkCard("Bhakoot Dosha", ...bhakootPill, checks.bhakoot.note)}
         ${checkCard("Rajju Dosha", ...rajjuPill, checks.rajju.note)}
         ${checkCard("Vedha Dosha", ...vedhaPill, checks.vedha.note)}
+        ${checkCard("Navamsha (D9) Moon", ...navamshaPill, `${checks.navamsha.maleRashi} &amp; ${checks.navamsha.femaleRashi}${vargottamaNote ? ` — ${vargottamaNote}` : ""}. ${checks.navamsha.note}`)}
       </div>
-      <p class="result-footnote">Mangal Dosha here is read from the Moon chart only, not the fuller Ascendant-based version, which needs an exact birthplace. Nadi/Bhakoot cancellation and Vedha pairings follow commonly cited rules — other traditions apply different or additional exceptions.</p>
+      <p class="result-footnote">${checks.lagnaMangal ? "The Ascendant-based Mangal Dosha above is the fuller, more authoritative version of the check." : "Mangal Dosha here is read from the Moon chart only — add a birthplace to both profiles to also see the fuller Ascendant-based version."} Nadi/Bhakoot cancellation and Vedha pairings follow commonly cited rules — other traditions apply different or additional exceptions.</p>
     </div>`;
 }
 
@@ -101,6 +156,8 @@ function renderMatch(maleInput, femaleInput, male, female, match) {
         <div class="birth-moons">
           ${moonChip("Male Moon", maleName, male)}
           ${moonChip("Female Moon", femaleName, female)}
+          ${lagnaChip("Male Ascendant", maleName, male)}
+          ${lagnaChip("Female Ascendant", femaleName, female)}
         </div>
       </div>
     </div>
@@ -148,10 +205,13 @@ document.querySelector(".mode-tabs").addEventListener("keydown", (event) => {
   $(next === "match" ? "#matchTab" : "#recommendTab").focus();
 });
 
+wireBirthplaceField("male");
+wireBirthplaceField("female");
+
 $("#demoButton").addEventListener("click", () => {
   const demo = {
-    maleName: "Arjun", malePlace: "Jaipur, India", maleDate: "1992-08-14", maleTime: "07:45", maleTimezone: "330",
-    femaleName: "Meera", femalePlace: "Pune, India", femaleDate: "1994-11-02", femaleTime: "18:20", femaleTimezone: "330",
+    maleName: "Arjun", malePlace: "Jaipur, India", maleLat: "26.912", maleLng: "75.787", maleDate: "1992-08-14", maleTime: "07:45", maleTimezone: "330",
+    femaleName: "Meera", femalePlace: "Pune, India", femaleLat: "18.520", femaleLng: "73.856", femaleDate: "1994-11-02", femaleTime: "18:20", femaleTimezone: "330",
   };
   Object.entries(demo).forEach(([id, value]) => { $(`#${id}`).value = value; });
 });

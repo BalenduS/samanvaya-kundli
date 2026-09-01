@@ -72,6 +72,37 @@ test("additional checks are internally consistent and self-pairs never flag Mang
   assert.equal(selfChecks.rajju.present, true); // same birth star is always the same Rajju group.
 });
 
+test("birthplace is optional and degrades gracefully", () => {
+  const withoutPlace = birthProfile({ date: "1992-08-14", time: "07:45", utcOffsetMinutes: 330 });
+  assert.equal(withoutPlace.hasBirthplace, false);
+  assert.equal(withoutPlace.lagna, null);
+  assert.equal(withoutPlace.lagnaManglik, null);
+  // Navamsha needs only the Moon's own longitude, so it's available either way.
+  assert.ok(withoutPlace.navamshaRashi);
+  assert.equal(typeof withoutPlace.vargottama, "boolean");
+});
+
+test("a birthplace produces a bounded Ascendant and Lagna-based Mangal Dosha read", () => {
+  const withPlace = birthProfile({ date: "1992-08-14", time: "07:45", utcOffsetMinutes: 330, latitude: 19.076, longitude: 72.877 });
+  assert.equal(withPlace.hasBirthplace, true);
+  assert.ok(withPlace.lagna.rashiIndex >= 0 && withPlace.lagna.rashiIndex < 12);
+  assert.ok(withPlace.lagna.nakshatraIndex >= 0 && withPlace.lagna.nakshatraIndex < 27);
+  assert.ok(withPlace.lagnaManglikHouse >= 1 && withPlace.lagnaManglikHouse <= 12);
+  assert.equal(withPlace.lagnaManglik, [1, 2, 4, 7, 8, 12].includes(withPlace.lagnaManglikHouse));
+
+  const checks = additionalChecks(withPlace, withPlace);
+  assert.ok(checks.lagnaMangal); // both profiles have a birthplace, so this check runs.
+  assert.equal(checks.lagnaMangal.compatible, true); // identical charts agree with themselves.
+
+  const noPlaceChecks = additionalChecks(birthProfile({ date: "1994-11-02", time: "18:20", utcOffsetMinutes: 330 }), withPlace);
+  assert.equal(noPlaceChecks.lagnaMangal, null); // one profile lacks a birthplace, so it's skipped, not guessed.
+});
+
+test("Vargottama is true exactly when the Navamsha sign matches the Moon-sign", () => {
+  const profile = birthProfile({ date: "1992-08-14", time: "07:45", utcOffsetMinutes: 330 });
+  assert.equal(profile.vargottama, profile.navamshaRashiIndex === profile.rashiIndex);
+});
+
 test("recommendations rank eight unique nakshatras on the 36-point scale", () => {
   const male = moonProfileFromLongitude(25);
   const recommendations = recommendNakshatras(male);

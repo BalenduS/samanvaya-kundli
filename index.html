@@ -73,7 +73,13 @@
             <fieldset class="profile-card male-card">
               <legend><span aria-hidden="true">♂</span> Male birth profile</legend>
               <div class="field full"><label for="maleName">Name <small>optional</small></label><input id="maleName" name="name" autocomplete="name" placeholder="e.g. Arjun"></div>
-              <div class="field full"><label for="malePlace">Birthplace <small>for your reference</small></label><input id="malePlace" name="place" autocomplete="address-level2" placeholder="City, country"></div>
+              <div class="field full">
+                <label for="malePlace">Birthplace <small>optional — unlocks Ascendant &amp; Navamsha</small></label>
+                <input id="malePlace" name="place" autocomplete="off" placeholder="Start typing a city…" list="malePlaceOptions">
+                <datalist id="malePlaceOptions"></datalist>
+              </div>
+              <div class="field"><label for="maleLat">Latitude <small>auto-filled</small></label><input id="maleLat" type="number" step="0.001" min="-90" max="90" placeholder="e.g. 19.076"></div>
+              <div class="field"><label for="maleLng">Longitude <small>auto-filled</small></label><input id="maleLng" type="number" step="0.001" min="-180" max="180" placeholder="e.g. 72.877"></div>
               <div class="field"><label for="maleDate">Birth date</label><input id="maleDate" name="date" type="date" required></div>
               <div class="field"><label for="maleTime">Local time</label><input id="maleTime" name="time" type="time" required></div>
               <div class="field full"><label for="maleTimezone">UTC offset at birth</label><select id="maleTimezone" name="timezone" required></select><small class="field-help">Include daylight saving if it applied.</small></div>
@@ -84,7 +90,13 @@
             <fieldset class="profile-card female-card">
               <legend><span aria-hidden="true">♀</span> Female birth profile</legend>
               <div class="field full"><label for="femaleName">Name <small>optional</small></label><input id="femaleName" name="name" autocomplete="name" placeholder="e.g. Meera"></div>
-              <div class="field full"><label for="femalePlace">Birthplace <small>for your reference</small></label><input id="femalePlace" name="place" autocomplete="address-level2" placeholder="City, country"></div>
+              <div class="field full">
+                <label for="femalePlace">Birthplace <small>optional — unlocks Ascendant &amp; Navamsha</small></label>
+                <input id="femalePlace" name="place" autocomplete="off" placeholder="Start typing a city…" list="femalePlaceOptions">
+                <datalist id="femalePlaceOptions"></datalist>
+              </div>
+              <div class="field"><label for="femaleLat">Latitude <small>auto-filled</small></label><input id="femaleLat" type="number" step="0.001" min="-90" max="90" placeholder="e.g. 18.520"></div>
+              <div class="field"><label for="femaleLng">Longitude <small>auto-filled</small></label><input id="femaleLng" type="number" step="0.001" min="-180" max="180" placeholder="e.g. 73.856"></div>
               <div class="field"><label for="femaleDate">Birth date</label><input id="femaleDate" name="date" type="date" required></div>
               <div class="field"><label for="femaleTime">Local time</label><input id="femaleTime" name="time" type="time" required></div>
               <div class="field full"><label for="femaleTimezone">UTC offset at birth</label><select id="femaleTimezone" name="timezone" required></select><small class="field-help">Include daylight saving if it applied.</small></div>
@@ -130,8 +142,9 @@
         <details>
           <summary>The simple version</summary>
           <p>This app uses <strong>Guna Milan</strong> (also called Ashtakoota), a well-known traditional Vedic astrology matching method. Your score out of 36 comes directly from a published South Indian marriage-points reference table, looked up by each partner's Moon Nakshatra and its pada (quarter). The 8-factor list below the score shows the traditional components of Guna Milan, computed separately using standard rules — regional reference tables can weight them slightly differently, so they may not always sum to exactly the same total.</p>
-          <p>Below that, the match also checks five things astrologers traditionally look at alongside the 36-point score: <strong>Mangal Dosha</strong> (Manglik status, read from the Moon chart only — the fuller Ascendant-based version needs an exact birthplace), <strong>Nadi</strong> and <strong>Bhakoot Dosha</strong> with their commonly cited cancellation exceptions, and the <strong>Rajju</strong> and <strong>Vedha</strong> dosha checks. Different authors and regional traditions apply different or additional exceptions to these.</p>
-          <p>We estimate your Moon and Mars positions from the date, time, and timezone you enter — you don't need your full birth chart. This is a simplified calculation, not professional astrology software, so if a placement falls right on the edge of a sign or Nakshatra, an astrologer using precise chart software could get a slightly different result. This app isn't a substitute for a full reading.</p>
+          <p>Below that, the match also checks things astrologers traditionally look at alongside the 36-point score: <strong>Mangal Dosha</strong> (Manglik status, from the Moon chart), <strong>Nadi</strong> and <strong>Bhakoot Dosha</strong> with their commonly cited cancellation exceptions, the <strong>Rajju</strong> and <strong>Vedha</strong> dosha checks, and your <strong>Navamsha (D9) Moon</strong> sign with its Vargottama status. Different authors and regional traditions apply different or additional exceptions to these.</p>
+          <p>Adding a birthplace is optional but unlocks two more traditional reads: your <strong>Ascendant (Lagna)</strong> sign, and the fuller, Ascendant-based version of Mangal Dosha (generally considered more authoritative than the Moon-chart version alone). Birthplaces are matched against a city list bundled with the app itself — nothing you type is sent anywhere; if your city isn't listed, you can enter its latitude and longitude directly.</p>
+          <p>We estimate your Moon, Mars, and Ascendant positions from the date, time, timezone, and (optionally) birthplace you enter — you don't need your full birth chart. This is a simplified calculation, not professional astrology software, so if a placement falls right on the edge of a sign or Nakshatra, an astrologer using precise chart software could get a slightly different result. This app isn't a substitute for a full reading.</p>
         </details>
       </div>
     </section>

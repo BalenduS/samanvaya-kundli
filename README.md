@@ -6,8 +6,9 @@ It includes:
 
 - a complete eight-category Ashtakoota (Guna Milan) table with a score out of 36, looked up from a published South Indian marriage-points reference table;
 - a category-by-category explanation of Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot, and Nadi;
-- five additional traditional checks alongside the score: Mangal Dosha (Manglik, Moon-chart based), Nadi and Bhakoot Dosha with commonly cited cancellation exceptions, Rajju Dosha, and Vedha Dosha;
-- sidereal Moon and Mars, rashi, nakshatra, and pada estimates from birth date, local time, and UTC offset;
+- Mangal Dosha (Manglik), Nadi and Bhakoot Dosha with commonly cited cancellation exceptions, Rajju Dosha, Vedha Dosha, and Navamsha (D9) Moon / Vargottama status;
+- an optional birthplace (searched from a bundled, offline world-city list — nothing is sent anywhere) that unlocks the Ascendant (Lagna) sign and the fuller, Ascendant-based Mangal Dosha check;
+- sidereal Moon, Mars, and (with a birthplace) Ascendant, rashi, nakshatra, and pada estimates from birth date, local time, timezone, and coordinates;
 - a Nakshatra guide that compares all 27 nakshatras and recommends the strongest table alignments;
 - offline support, install icons, and a standalone PWA experience;
 - visible source notes, computational limitations, and a non-deterministic disclaimer.
@@ -37,7 +38,9 @@ npm test
 | `index.html` | Semantic application shell, forms, method notes, and disclaimers |
 | `styles.css` | Responsive visual system and accessibility states |
 | `app.js` | UI behavior, results rendering, and install guidance |
-| `calculations.js` | Moon-position estimate and Ashtakoota scoring engine |
+| `calculations.js` | Moon/Mars/Ascendant position estimates and the Ashtakoota + traditional-checks scoring engine |
+| `places.js` | Birthplace search over the bundled city list (fetched lazily, never transmitted) |
+| `cities.json` | Offline world-city list for birthplace search (GeoNames.org, CC BY 4.0) |
 | `manifest.webmanifest` | PWA identity and install icons |
 | `sw.js` | Offline application-shell cache |
 | `server.js` | Small local static server |
@@ -98,8 +101,10 @@ The in-app **How this works** section is the canonical explanation. In brief:
 
 - the score out of 36 is a direct lookup in a 36×36 marriage-points table transcribed from a published South Indian Panchangam boy-girl matching chart (Chilakamarthi Panchangam), keyed by each partner's Moon Nakshatra and pada — see `MARRIAGE_POINTS_MATRIX` in `calculations.js`;
 - the 8-factor breakdown shown alongside the score (Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot, Nadi — labeled in plain English in the UI) is computed separately with standard Ashtakoota rules; it illustrates the traditional components but may not always sum to exactly the same total as the reference-table score, since regional tables vary;
-- five additional traditional checks run alongside the score (see `additionalChecks` in `calculations.js`): **Mangal Dosha** (Manglik status from the Moon chart only — the fuller Ascendant-based version needs a geocoded birthplace, which this app doesn't collect), **Nadi** and **Bhakoot Dosha** with commonly cited cancellation exceptions, **Rajju Dosha** (same Pada/Kati/Nabhi/Kantha/Shira group), and **Vedha Dosha** (a fixed list of traditionally afflicting Nakshatra pairs) — these are commonly cited rule sets, not the only versions in circulation;
-- the browser calculation uses compact lunar and Martian orbital models with a linear Lahiri/Chitrapaksha approximation (not a professional ephemeris) to estimate each Moon/Mars position from birth date, time, and timezone;
-- this first version does not apply a full-chart (Navamsha/Lagna) analysis, which would need a geocoded birthplace rather than just a UTC offset.
+- additional traditional checks run alongside the score (see `additionalChecks` in `calculations.js`): **Mangal Dosha** from the Moon chart (Chandra Manglik) always, and from the Ascendant (the fuller, more authoritative version) once a birthplace is given; **Nadi** and **Bhakoot Dosha** with commonly cited cancellation exceptions; **Rajju Dosha** (same Pada/Kati/Nabhi/Kantha/Shira group); **Vedha Dosha** (a fixed list of traditionally afflicting Nakshatra pairs); and **Navamsha (D9) Moon** harmony with each partner's Vargottama status — these are commonly cited rule sets, not the only versions in circulation;
+- the Ascendant (Lagna) is computed from Greenwich Sidereal Time, the birthplace's latitude/longitude, and the obliquity of the ecliptic, using the standard closed-form Ascendant formula — cross-checked in this repo's tests against an independent numerical horizon search;
+- Navamsha (D9) divides each sign into nine 3°20' slices; this app uses the equivalent simplified rule of treating the full 360° zodiac as one continuous run of slices from Aries, which reproduces the classical movable/fixed/dual starting-sign rule exactly;
+- birthplace is optional and, when given, is matched against `cities.json` — a static list bundled with the app (~34,000 GeoNames cities, population > 15,000) fetched lazily on first use and cached by the service worker for offline reuse; nothing typed into the birthplace field is sent to any server. Cities not in the list can be entered by latitude/longitude directly;
+- the browser calculation uses compact lunar, Martian, and solar orbital models with a linear Lahiri/Chitrapaksha approximation (not a professional ephemeris) to estimate positions from birth date, time, timezone, and (optionally) coordinates.
 
 Birth details are processed locally in the browser and are not transmitted by the app.
