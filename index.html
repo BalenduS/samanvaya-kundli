@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a2b">
+  <meta name="description" content="A thoughtful, transparent Ashtakoota and Nakshatra compatibility companion.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Samanvaya — Kundli compatibility</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the tool</a>
+  <div class="sky" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Samanvaya home">
+      <span class="brand-mark" aria-hidden="true"><i>सं</i></span>
+      <span><b>Samanvaya</b><small>समन्वय · finding accord</small></span>
+    </a>
+    <button class="install-button" id="installButton" type="button" hidden>Install app</button>
+  </header>
+
+  <aside class="ios-install-guide" id="iosInstallGuide" aria-label="Install Samanvaya on iPhone or iPad" hidden>
+    <span class="ios-share-icon" aria-hidden="true">↥</span>
+    <p><b>Keep Samanvaya on your Home Screen</b><span>Tap <strong>Share</strong>, then choose <strong>Add to Home Screen</strong>.</span></p>
+    <button id="dismissIosGuide" type="button" aria-label="Dismiss install instructions">×</button>
+  </aside>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow">Moon-led compatibility · with context</p>
+        <h1>Tradition,<br><em>held lightly.</em></h1>
+        <p class="hero-intro">Explore Ashtakoota’s eight symbolic lenses without turning a score into a verdict.</p>
+      </div>
+      <div class="kundli-orbit" aria-hidden="true">
+        <div class="diamond diamond-outer"><span class="moon">☾</span></div>
+        <div class="diamond diamond-inner"></div>
+        <span class="orbit-label orbit-one">अश्विनी</span>
+        <span class="orbit-label orbit-two">रेवती</span>
+        <span class="orbit-label orbit-three">चित्रा</span>
+      </div>
+      <div class="principle-strip">
+        <span><b>8</b> kūṭas</span><i></i><span><b>36</b> guṇas</span><i></i><span><b>27</b> nakshatras</span>
+      </div>
+    </section>
+
+    <section class="workspace" aria-labelledby="tool-title">
+      <div class="section-heading">
+        <p class="eyebrow">Choose an exploration</p>
+        <h2 id="tool-title">Read the pattern, then talk.</h2>
+      </div>
+
+      <div class="mode-tabs" role="tablist" aria-label="Compatibility tools">
+        <button id="matchTab" role="tab" aria-controls="matchPanel" aria-selected="true" tabindex="0">
+          <span>01</span> Guna Milan
+        </button>
+        <button id="recommendTab" role="tab" aria-controls="recommendPanel" aria-selected="false" tabindex="-1">
+          <span>02</span> Nakshatra guide
+        </button>
+      </div>
+
+      <section id="matchPanel" class="tool-panel" role="tabpanel" aria-labelledby="matchTab">
+        <div class="panel-intro">
+          <h3>Two Moon stories, side by side</h3>
+          <p>Birth time is converted to UTC, then used to estimate sidereal Moon sign and nakshatra.</p>
+        </div>
+        <form id="matchForm" novalidate>
+          <div class="profiles-grid">
+            <fieldset class="profile-card male-card">
+              <legend><span aria-hidden="true">♂</span> Male birth profile</legend>
+              <div class="field full"><label for="maleName">Name <small>optional</small></label><input id="maleName" name="name" autocomplete="name" placeholder="e.g. Arjun"></div>
+              <div class="field full"><label for="malePlace">Birthplace <small>for your reference</small></label><input id="malePlace" name="place" autocomplete="address-level2" placeholder="City, country"></div>
+              <div class="field"><label for="maleDate">Birth date</label><input id="maleDate" name="date" type="date" required></div>
+              <div class="field"><label for="maleTime">Local time</label><input id="maleTime" name="time" type="time" required></div>
+              <div class="field full"><label for="maleTimezone">UTC offset at birth</label><select id="maleTimezone" name="timezone" required></select><small class="field-help">Include daylight saving if it applied.</small></div>
+            </fieldset>
+
+            <div class="profile-divider" aria-hidden="true"><span>meets</span></div>
+
+            <fieldset class="profile-card female-card">
+              <legend><span aria-hidden="true">♀</span> Female birth profile</legend>
+              <div class="field full"><label for="femaleName">Name <small>optional</small></label><input id="femaleName" name="name" autocomplete="name" placeholder="e.g. Meera"></div>
+              <div class="field full"><label for="femalePlace">Birthplace <small>for your reference</small></label><input id="femalePlace" name="place" autocomplete="address-level2" placeholder="City, country"></div>
+              <div class="field"><label for="femaleDate">Birth date</label><input id="femaleDate" name="date" type="date" required></div>
+              <div class="field"><label for="femaleTime">Local time</label><input id="femaleTime" name="time" type="time" required></div>
+              <div class="field full"><label for="femaleTimezone">UTC offset at birth</label><select id="femaleTimezone" name="timezone" required></select><small class="field-help">Include daylight saving if it applied.</small></div>
+            </fieldset>
+          </div>
+          <div class="form-actions">
+            <button class="text-button" id="demoButton" type="button">Use a sample pair</button>
+            <button class="primary-button" type="submit">Read the match <span aria-hidden="true">→</span></button>
+          </div>
+          <p class="form-error" id="matchError" role="alert" hidden></p>
+        </form>
+        <div id="matchResults" class="results" aria-live="polite" hidden></div>
+      </section>
+
+      <section id="recommendPanel" class="tool-panel" role="tabpanel" aria-labelledby="recommendTab" hidden>
+        <div class="panel-intro">
+          <h3>A field of promising stars</h3>
+          <p>Enter one male birth profile. We compare it with each nakshatra’s four padas and show the strongest symbolic alignments.</p>
+        </div>
+        <form id="recommendForm" class="single-form" novalidate>
+          <div class="single-form-fields">
+            <div class="field"><label for="guideName">Name <small>optional</small></label><input id="guideName" autocomplete="name" placeholder="e.g. Arjun"></div>
+            <div class="field"><label for="guideDate">Birth date</label><input id="guideDate" type="date" required></div>
+            <div class="field"><label for="guideTime">Local time</label><input id="guideTime" type="time" required></div>
+            <div class="field"><label for="guideTimezone">UTC offset at birth</label><select id="guideTimezone" required></select></div>
+          </div>
+          <div class="form-actions compact">
+            <p>Results are possibilities for reflection, not partner recommendations.</p>
+            <button class="primary-button" type="submit">Find aligned stars <span aria-hidden="true">→</span></button>
+          </div>
+          <p class="form-error" id="recommendError" role="alert" hidden></p>
+        </form>
+        <div id="recommendResults" class="results" aria-live="polite" hidden></div>
+      </section>
+    </section>
+
+    <section class="method" id="method" aria-labelledby="method-title">
+      <div class="method-lead">
+        <p class="eyebrow">Method &amp; provenance</p>
+        <h2 id="method-title">What this app knows—<br>and what it cannot.</h2>
+      </div>
+      <div class="method-content">
+        <details open>
+          <summary>Traditional basis</summary>
+          <p>This app uses the conventional North Indian Ashtakoota sequence: Varna (1), Vashya (2), Tara (3), Yoni (4), Graha Maitri (5), Gana (6), Bhakoot (7), and Nadi (8). A 36-point table is documented in modern Jyotisha teaching works such as K. S. Charak’s <cite>Elements of Vedic Astrology</cite>. B. V. Raman’s <cite>Muhurtha</cite>, chapter XI, gives a widely used marriage-compatibility treatment.</p>
+          <p>The <cite>Brihat Parāśara Horā Śāstra</cite> is linked as important wider horoscopy and nakshatra context in the Parāśara tradition. We do <strong>not</strong> claim that its oldest recoverable layer supplies this exact modern 36-point implementation.</p>
+        </details>
+        <details>
+          <summary>Computational assumptions</summary>
+          <ul>
+            <li>Geocentric Moon longitude uses a compact, low-precision orbital model with major perturbations—not a professional ephemeris.</li>
+            <li>A linear Chitrapaksha/Lahiri ayanamsha approximation is used. Near a nakshatra or pada boundary, verify with a current panchanga or Swiss Ephemeris.</li>
+            <li>Birthplace is not geocoded; location affects this version only through the UTC offset you enter.</li>
+            <li>Yoni and Vashya use disclosed compact relationship tables. Regional tables differ.</li>
+            <li>No Nadi/Bhakoot cancellation rules, Mangala analysis, Navamsha, Dashas, house comparison, or astrologer judgment are applied.</li>
+            <li>Nakshatra recommendations test the midpoint of each pada and keep that star’s strongest pada; they do not represent a complete second birth chart.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Sources &amp; evidence boundary</summary>
+          <div class="source-list">
+            <a href="https://archive.org/details/BPHSEnglish" target="_blank" rel="noreferrer"><span>Primary-text edition</span>Bṛhat Parāśara Horā Śāstra, trans. R. Santhanam ↗</a>
+            <a href="https://www.panchanga.lv/wp-content/uploads/2020/06/Muhurta_Raman.pdf" target="_blank" rel="noreferrer"><span>Practice reference</span>B. V. Raman, <cite>Muhurtha</cite>, chapter XI ↗</a>
+            <a href="https://books.google.com/books?id=Y7FM5Fpn1X8C" target="_blank" rel="noreferrer"><span>Modern teaching reference</span>K. S. Charak, <cite>Elements of Vedic Astrology</cite> ↗</a>
+            <a href="https://www.astro.com/ftp/swisseph/doc/swisseph.pdf" target="_blank" rel="noreferrer"><span>Astronomical reference</span>Swiss Ephemeris: Lahiri/Chitrapaksha definition ↗</a>
+            <a href="https://doi.org/10.1038/318419a0" target="_blank" rel="noreferrer"><span>Evidence context</span>Carlson, double-blind astrology test, <cite>Nature</cite> (1985) ↗</a>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <aside class="disclaimer">
+      <span aria-hidden="true">✦</span>
+      <div><h2>A cultural tool, not a life decision.</h2><p>Astrology is not established science. These results cannot predict relationship success or replace honest conversation, consent, counseling, medical advice, or your own judgment. Never use a score to justify discrimination, pressure, or harm.</p></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand"><span class="brand-mark" aria-hidden="true"><i>सं</i></span><span><b>Samanvaya</b><small>Private by design · calculations stay on your device</small></span></div>
+    <a href="#method">Method &amp; sources ↑</a>
+  </footer>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
