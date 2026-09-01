@@ -1,4 +1,4 @@
-import { birthProfile, calculateKootas, recommendNakshatras } from "./calculations.js";
+import { birthProfile, calculateKootas, recommendNakshatras, RASHI_WESTERN, GANA_PLAIN } from "./calculations.js";
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
@@ -48,7 +48,7 @@ function validBirth(input) {
 const formatNumber = (value) => Number.isInteger(value) ? String(value) : value.toFixed(1);
 
 function moonChip(label, name, profile) {
-  return `<div class="moon-chip"><small>${escapeHtml(label)}</small><b>${escapeHtml(name)} · ${profile.nakshatra.name}</b><span>${profile.rashi} · pada ${profile.pada} · ${profile.longitude.toFixed(2)}°</span></div>`;
+  return `<div class="moon-chip"><small>${escapeHtml(label)}</small><b>${escapeHtml(name)} · ${profile.nakshatra.name}</b><span>${profile.rashi} (${RASHI_WESTERN[profile.rashi]}) · segment ${profile.pada} of 4</span></div>`;
 }
 
 function renderMatch(maleInput, femaleInput, male, female, match) {
@@ -69,7 +69,7 @@ function renderMatch(maleInput, femaleInput, male, female, match) {
         <div class="score-inner"><span class="score-number">${formatNumber(match.score)}</span><small>out of 36</small></div>
       </div>
       <div class="result-copy">
-        <p class="eyebrow">Ashtakoota result · ${escapeHtml(maleName)} &amp; ${escapeHtml(femaleName)}</p>
+        <p class="eyebrow">Compatibility result · ${escapeHtml(maleName)} &amp; ${escapeHtml(femaleName)}</p>
         <h3>${match.band.label}</h3>
         <p>${match.band.note}</p>
         <div class="birth-moons">
@@ -79,9 +79,8 @@ function renderMatch(maleInput, femaleInput, male, female, match) {
       </div>
     </div>
     <div class="breakdown">
-      <div class="breakdown-head"><h4>The eight-kūṭa ledger</h4><p>Each row shows this app’s exact table result.</p></div>
+      <div class="breakdown-head"><h4>The 8 factors</h4><p>Each row shows this app's exact result for that factor.</p></div>
       <div class="koota-list">${categories}</div>
-      <p class="result-footnote">No cancellation rules or full-chart judgments are included. If either Moon lies near a boundary, verify the nakshatra with a professional ephemeris before interpreting the table.</p>
     </div>`;
   $("#matchResults").hidden = false;
   $("#matchResults").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -91,18 +90,17 @@ function renderRecommendations(input, male, recommendations) {
   const name = input.name || "This profile";
   const cards = recommendations.map((result, index) => `
     <article class="star-card">
-      <span class="star-rank">ALIGNMENT ${String(index + 1).padStart(2, "0")}</span>
+      <span class="star-rank">MATCH ${String(index + 1).padStart(2, "0")}</span>
       <h5>${result.nakshatra.name}</h5>
-      <small>${result.nakshatra.deity} · ${result.nakshatra.gana} gana</small>
-      <div class="star-score"><b>${formatNumber(result.score)}<small>/36</small></b><span>best at pada ${result.pada}<br>${result.rashi}</span></div>
+      <small>Guardian: ${result.nakshatra.deity} · ${GANA_PLAIN[result.nakshatra.gana]}</small>
+      <div class="star-score"><b>${formatNumber(result.score)}<small>/36</small></b><span>${result.rashi} (${RASHI_WESTERN[result.rashi]})</span></div>
     </article>`).join("");
   $("#recommendResults").innerHTML = `
     <div class="recommend-head">
-      <div><p class="eyebrow">A symbolic shortlist—not a search filter</p><h4>Stars with the strongest table alignment</h4><p>For ${escapeHtml(name)}, we tested the midpoint of every pada. Scores are only a way to inspect traditional categories; they do not rank people.</p></div>
-      <div class="recommend-moon"><small>Starting Moon</small><b>${male.nakshatra.name}, pada ${male.pada}</b><br>${male.rashi}</div>
+      <div><p class="eyebrow">Your top matches</p><h4>Nakshatras with the strongest match</h4><p>For ${escapeHtml(name)}, we checked all 27 Nakshatras with the same 8-factor method used above.</p></div>
+      <div class="recommend-moon"><small>Your Moon</small><b>${male.nakshatra.name}</b><br>${male.rashi} (${RASHI_WESTERN[male.rashi]})</div>
     </div>
-    <div class="recommend-grid">${cards}</div>
-    <p class="result-footnote">A person’s nakshatra is not their personality, values, readiness, or capacity for a healthy relationship. A full traditional consultation would consider both complete charts and local interpretive rules.</p>`;
+    <div class="recommend-grid">${cards}</div>`;
   $("#recommendResults").hidden = false;
   $("#recommendResults").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }

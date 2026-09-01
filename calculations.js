@@ -7,6 +7,14 @@ export const RASHIS = [
   "Tula", "Vrishchika", "Dhanu", "Makara", "Kumbha", "Meena",
 ];
 
+export const RASHI_WESTERN = {
+  Mesha: "Aries", Vrishabha: "Taurus", Mithuna: "Gemini", Karka: "Cancer",
+  Simha: "Leo", Kanya: "Virgo", Tula: "Libra", Vrishchika: "Scorpio",
+  Dhanu: "Sagittarius", Makara: "Capricorn", Kumbha: "Aquarius", Meena: "Pisces",
+};
+
+export const GANA_PLAIN = { Deva: "Calm nature", Manushya: "Balanced nature", Rakshasa: "Intense nature" };
+
 export const NAKSHATRAS = [
   ["Ashwini", "Ashvini Kumaras", "Ketu", "Deva", "Adi", "Horse"],
   ["Bharani", "Yama", "Venus", "Manushya", "Madhya", "Elephant"],
@@ -172,6 +180,14 @@ function relation(from, to) {
 
 const detail = (id, name, score, max, note, values) => ({ id, name, score, max, note, values });
 
+function alignmentLabel(score, max) {
+  const percent = max === 0 ? 0 : score / max;
+  if (percent >= 0.999) return "Fully aligned";
+  if (percent >= 0.5) return "Mostly aligned";
+  if (percent > 0) return "Partially aligned";
+  return "Limited alignment";
+}
+
 export function calculateKootas(male, female) {
   const maleVarna = varnaByRashi[male.rashiIndex];
   const femaleVarna = varnaByRashi[female.rashiIndex];
@@ -221,24 +237,24 @@ export function calculateKootas(male, female) {
   const nadi = sameNadi ? 0 : 8;
 
   const categories = [
-    detail("varna", "Varna", varna, 1, "Traditional social/spiritual classification by Moon sign.", `${maleVarna} · ${femaleVarna}`),
-    detail("vashya", "Vashya", vashya, 2, "A symbolic affinity between five sign-natures.", `${maleVashya} · ${femaleVashya}`),
-    detail("tara", "Tara", tara, 3, "Counts each birth star through a repeating nine-star cycle.", `${maleToFemale} / ${femaleToMale} steps`),
-    detail("yoni", "Yoni", yoni, 4, "Compares traditional animal emblems assigned to the stars.", `${maleYoni} · ${femaleYoni}`),
-    detail("maitri", "Graha Maitri", maitri, 5, "Uses the conventional natural relations of the Moon-sign lords.", `${maleLord} · ${femaleLord}`),
-    detail("gana", "Gana", gana, 6, "Compares Deva, Manushya, and Rakshasa temperament groups.", `${ganaA} · ${ganaB}`),
-    detail("bhakoot", "Bhakoot", bhakoot, 7, "Tests the traditional 2/12, 5/9, and 6/8 Moon-sign distances.", `${rashiDistanceA} / ${rashiDistanceB} relationship`),
-    detail("nadi", "Nadi", nadi, 8, "Compares the three traditional nakshatra groupings; no health inference is made.", `${male.nakshatra.nadi} · ${female.nakshatra.nadi}`),
+    detail("varna", "Mindset & Spirit", varna, 1, "How closely your inner nature and outlook match.", alignmentLabel(varna, 1)),
+    detail("vashya", "Mutual Pull", vashya, 2, "A symbolic read on attraction and who tends to lead.", alignmentLabel(vashya, 2)),
+    detail("tara", "Wellbeing", tara, 3, "Checks whether your birth stars support each other's luck and health.", alignmentLabel(tara, 3)),
+    detail("yoni", "Chemistry", yoni, 4, "A traditional symbol-based read on physical compatibility.", `${maleYoni} & ${femaleYoni}`),
+    detail("maitri", "Mental Connection", maitri, 5, "How well your minds and communication styles are likely to click.", `${maleLord} & ${femaleLord}`),
+    detail("gana", "Temperament", gana, 6, "Compares your general pace and nature — calm, balanced, or intense.", alignmentLabel(gana, 6)),
+    detail("bhakoot", "Love & Family Harmony", bhakoot, 7, "A traditional check for long-term emotional and family harmony.", alignmentLabel(bhakoot, 7)),
+    detail("nadi", "Health Compatibility", nadi, 8, "A traditional check historically linked to health and vitality between partners.", alignmentLabel(nadi, 8)),
   ];
   const score = categories.reduce((total, category) => total + category.score, 0);
   return { score, categories, band: scoreBand(score) };
 }
 
 export function scoreBand(score) {
-  if (score >= 28) return { label: "Strong alignment in this method", tone: "high", note: "The traditional table finds many aligned factors. Treat this as a conversation prompt, not a forecast." };
-  if (score >= 21) return { label: "Many supportive factors", tone: "good", note: "Several categories align, with some differences worth discussing in real life." };
-  if (score >= 18) return { label: "A mixed traditional result", tone: "mixed", note: "The total combines supportive and contrasting categories; the details matter more than the threshold." };
-  return { label: "Several symbolic differences", tone: "low", note: "This method flags differences, but cannot measure care, consent, safety, values, or relationship health." };
+  if (score >= 28) return { label: "A strong match", tone: "high", note: "Many traditional factors align well between you two." };
+  if (score >= 21) return { label: "A good match", tone: "good", note: "Most factors align, with a few worth talking through." };
+  if (score >= 18) return { label: "A mixed match", tone: "mixed", note: "Some factors align and others don't — a fairly even mix." };
+  return { label: "A challenging match", tone: "low", note: "Several traditional factors differ between you two." };
 }
 
 export function recommendNakshatras(male, limit = 8) {
